@@ -3,12 +3,10 @@ using System.Linq;
 
 public class InventoryController
 {
-    // Зависимости, получаемые через конструктор
     private readonly InventoryWindowView _windowView;
     private readonly DragIconView _dragIconView;
     private readonly TooltipView _tooltipView;
 
-    // Внутреннее состояние
     private InventorySlotView _draggedFromSlot;
 
     public InventoryController(InventoryWindowView windowView, DragIconView dragIconView, TooltipView tooltipView)
@@ -18,17 +16,12 @@ public class InventoryController
         _tooltipView = tooltipView;
     }
 
-    /// <summary>
-    /// Этот метод вызывается UIManager'ом КАЖДЫЙ РАЗ при открытии инвентаря.
-    /// Он подписывает контроллер на события от НОВЫХ, только что созданных UI-слотов.
-    /// </summary>
     public void SubscribeToSlots()
     {
         if (_windowView.PlayerInventoryView != null)
         {
             foreach (var slotView in _windowView.PlayerInventoryView.GetSlotViews())
             {
-                // Передаем модель напрямую из View
                 SubscribeToSlotEvents(slotView, _windowView.PlayerInventoryView.GetModel());
             }
         }
@@ -44,14 +37,12 @@ public class InventoryController
 
     private void SubscribeToSlotEvents(InventorySlotView slotView, InventoryModel model)
     {
-        // Отписываемся от старых событий на всякий случай, чтобы избежать дубликатов
         slotView.OnPointerEnterEvent -= (index) => HandlePointerEnter(model, index);
         slotView.OnPointerExitEvent -= HandlePointerExit;
         slotView.OnBeginDragEvent -= (index) => HandleBeginDrag(slotView, model);
         slotView.OnEndDragEvent -= HandleEndDrag;
         slotView.OnDoubleClickEvent -= (index) => HandleDoubleClick(model, index);
 
-        // Подписываемся заново
         slotView.OnPointerEnterEvent += (index) => HandlePointerEnter(model, index);
         slotView.OnPointerExitEvent += HandlePointerExit;
         slotView.OnBeginDragEvent += (index) => HandleBeginDrag(slotView, model);
@@ -96,7 +87,6 @@ public class InventoryController
         InventoryModel sourceModel = GetModelForSlot(_draggedFromSlot);
         int sourceIndex = _draggedFromSlot.SlotIndex;
 
-        // Ищем целевой слот
         var targetSlotView = FindSlotUnderCursor();
 
         if (targetSlotView != null)
@@ -104,7 +94,6 @@ public class InventoryController
             InventoryModel targetModel = GetModelForSlot(targetSlotView);
             int targetIndex = targetSlotView.SlotIndex;
 
-            // Используем новый централизованный метод для перемещения
             InventoryModel.TransferItem(sourceModel, sourceIndex, targetModel, targetIndex);
         }
 

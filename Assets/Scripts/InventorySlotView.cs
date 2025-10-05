@@ -12,17 +12,11 @@ public class InventorySlotView : MonoBehaviour, IPointerEnterHandler, IPointerEx
     [SerializeField] private Image _itemIcon;
     [SerializeField] private TextMeshProUGUI _quantityText;
 
-    [Serializable]
-    public struct SlotStateVisuals
-    {
-        public Color BackgroundColor;
-    }
-
     [Header("Настройки состояний")]
-    [SerializeField] private SlotStateVisuals _normalState;
-    [SerializeField] private SlotStateVisuals _hoveredState;
-    [SerializeField] private SlotStateVisuals _selectedState;
-    [SerializeField] private SlotStateVisuals _emptyState;
+    [SerializeField] private Color _normalStateColor;
+    [SerializeField] private Color _hoveredStateColor;
+    [SerializeField] private Color _selectedStateColor;
+    [SerializeField] private Color _emptyStateColor;
     [SerializeField] private float _colorFadeDuration = 0.1f;
 
     public int SlotIndex { get; private set; }
@@ -33,17 +27,15 @@ public class InventorySlotView : MonoBehaviour, IPointerEnterHandler, IPointerEx
     public event Action OnEndDragEvent;
     public event Action<int> OnDoubleClickEvent;
 
-    // --- УПРАВЛЕНИЕ СОСТОЯНИЕМ ---
     private bool _isPointerOver;
     private bool _isSelected;
     private bool _isEmpty = true;
-    private bool _isGlobalDragging; // НОВОЕ ПОЛЕ: знает, тащит ли кто-то предмет ВООБЩЕ
+    private bool _isGlobalDragging; 
 
     public void Init(int index)
     {
         SlotIndex = index;
-        // При инициализации сразу устанавливаем правильный пустой цвет
-        _background.color = _emptyState.BackgroundColor;
+        _background.color = _emptyStateColor;
     }
 
     public void UpdateView(InventorySlot slot)
@@ -65,27 +57,26 @@ public class InventorySlotView : MonoBehaviour, IPointerEnterHandler, IPointerEx
 
     private void UpdateVisualState()
     {
-        SlotStateVisuals targetState;
+        Color targetColor;
 
         bool canBeHovered = !_isEmpty || _isGlobalDragging;
 
         if (_isSelected)
         {
-            targetState = _selectedState;
+            targetColor = _selectedStateColor;
         }
         else if (_isPointerOver && canBeHovered)
         {
-            targetState = _hoveredState;
+            targetColor = _hoveredStateColor;
         }
         else
         {
-            targetState = _isEmpty ? _emptyState : _normalState;
+            targetColor = _isEmpty ? _emptyStateColor : _normalStateColor;
         }
 
-        _background.DOColor(targetState.BackgroundColor, _colorFadeDuration).SetEase(Ease.OutQuad);
+        _background.DOColor(targetColor, _colorFadeDuration).SetEase(Ease.OutQuad);
     }
 
-    // --- ПУБЛИЧНЫЕ МЕТОДЫ ДЛЯ КОНТРОЛЛЕРА ---
 
     public void SetSelected(bool isSelected)
     {
@@ -93,12 +84,10 @@ public class InventorySlotView : MonoBehaviour, IPointerEnterHandler, IPointerEx
         UpdateVisualState();
     }
 
-    // НОВЫЙ МЕТОД: Слот получает уведомление о глобальном состоянии перетаскивания
     public void OnGlobalDragStateChanged(bool isDragging)
     {
         _isGlobalDragging = isDragging;
-        // Перерисовываем себя, если мышь сейчас над нами,
-        // так как наше состояние "можно ли подсвечивать" могло измениться
+
         if (_isPointerOver)
         {
             UpdateVisualState();

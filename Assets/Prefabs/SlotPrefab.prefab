@@ -302,12 +302,8 @@ MonoBehaviour:
   _background: {fileID: 4963078115514076604}
   _itemIcon: {fileID: 4463384854965212505}
   _quantityText: {fileID: 5583036222616959317}
-  _normalState:
-    BackgroundColor: {r: 1, g: 1, b: 1, a: 0.78431374}
-  _hoveredState:
-    BackgroundColor: {r: 1, g: 1, b: 1, a: 1}
-  _selectedState:
-    BackgroundColor: {r: 0.8980392, g: 0.8430472, b: 0.32549024, a: 0.7882353}
-  _emptyState:
-    BackgroundColor: {r: 1, g: 1, b: 1, a: 0.19607843}
+  _normalStateColor: {r: 1, g: 1, b: 1, a: 1}
+  _hoveredStateColor: {r: 1, g: 0.82279295, b: 0.15566039, a: 0.8862745}
+  _selectedStateColor: {r: 0.8867924, g: 0.2300641, b: 0.2300641, a: 1}
+  _emptyStateColor: {r: 0.5283019, g: 0.5283019, b: 0.5283019, a: 1}
   _colorFadeDuration: 0.1

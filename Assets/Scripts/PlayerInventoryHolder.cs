@@ -10,14 +10,13 @@ public class PlayerInventoryHolder : MonoBehaviour, IInteractable
 
     void Awake()
     {
-        // Создаем инвентарь игрока один раз на всю игру
         Inventory = new InventoryModel(_playerBackpackData.Capacity);
-        // Тут можно добавить логику загрузки сохраненных предметов
     }
 
     private void OnMouseDown()
     {
-        // По клику на себя, игрок открывает свой инвентарь (без второго окна)
+        if (GameState.IsUiOpen) return;
+
         OnInteracted?.Invoke(this);
     }
 }

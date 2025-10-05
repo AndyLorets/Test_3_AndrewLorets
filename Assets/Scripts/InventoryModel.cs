@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine; // Для Debug.Log
+using UnityEngine;
 
 public class InventoryModel
 {
-    // Используем 'event' для безопасности, чтобы никто извне не мог вызвать событие
     public Action OnInventoryUpdated;
 
     public List<InventorySlot> Slots { get; private set; }
@@ -66,7 +65,6 @@ public class InventoryModel
         return quantity <= 0;
     }
 
-    // НОВЫЙ МЕТОД: централизованная логика перемещения
     public static void TransferItem(InventoryModel fromModel, int fromIndex, InventoryModel toModel, int toIndex)
     {
         InventorySlot fromSlot = fromModel.Slots[fromIndex];
@@ -109,7 +107,6 @@ public class InventoryModel
             }
         }
 
-        // Обновляем оба инвентаря
         fromModel.OnInventoryUpdated?.Invoke();
         toModel.OnInventoryUpdated?.Invoke();
     }

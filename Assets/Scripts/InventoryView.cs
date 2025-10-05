@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Этот класс не MonoBehaviour. Он управляет группой UI-элементов слотов (InventorySlotView),
-// связывая их с конкретной моделью данных (InventoryModel).
 public class InventoryView
 {
     private Transform _slotsContainer;
@@ -31,7 +29,6 @@ public class InventoryView
     /// </summary>
     public void Initialize()
     {
-        // Очищаем предыдущие слоты на всякий случай, если они остались
         foreach (Transform child in _slotsContainer)
         {
             Object.Destroy(child.gameObject);
@@ -72,7 +69,7 @@ public class InventoryView
     /// Возвращает модель данных, с которой работает это View.
     /// Критически важно для InventoryController, чтобы он знал, какой инвентарь изменяет.
     /// </summary>
-    public InventoryModel GetModel() => _inventoryModel; // <-- ВОТ ЭТОТ МЕТОД НУЖНО БЫЛО ДОБАВИТЬ
+    public InventoryModel GetModel() => _inventoryModel;
 
     /// <summary>
     /// "Уборщик". Отписывается от событий модели, чтобы избежать утечек памяти,

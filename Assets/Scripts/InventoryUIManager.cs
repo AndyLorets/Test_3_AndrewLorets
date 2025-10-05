@@ -5,9 +5,7 @@ public class InventoryUIManager : IInitializable, ITickable
 {
     private readonly PlayerInventoryHolder _playerInventoryHolder;
     private readonly InventoryWindowView _inventoryWindowView;
-    private readonly InventoryController _inventoryController; // Нужен для подписки на новые слоты
-
-    private IInteractable _currentlyOpenContainer;
+    private readonly InventoryController _inventoryController;
 
     public InventoryUIManager(PlayerInventoryHolder playerHolder, InventoryWindowView windowView, InventoryController inventoryController)
     {
@@ -30,14 +28,14 @@ public class InventoryUIManager : IInitializable, ITickable
     {
         _inventoryWindowView.Open(player, null);
         _inventoryController.SubscribeToSlots();
-    }
 
+        GameState.IsUiOpen = true; 
+    }
     private void OpenContainerInventory(IInteractable container)
     {
         _inventoryWindowView.Open(_playerInventoryHolder, container);
         _inventoryController.SubscribeToSlots();
     }
-
     public void Tick()
     {
         if (Input.GetKeyDown(KeyCode.Escape) && _inventoryWindowView.IsOpen)
