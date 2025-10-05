@@ -7,14 +7,34 @@ public class InventorySlot
     public int Quantity { get; private set; }
 
     public bool IsEmpty => ItemData == null;
+    public bool IsFull => !IsEmpty && Quantity >= ItemData.MaxStackSize;
 
     public InventorySlot()
     {
         Clear();
     }
 
+    /// <summary>
+    /// Проверяет, можно ли добавить данный предмет в этот слот.
+    /// </summary>
+    /// <param name="itemToAdd">Предмет для проверки.</param>
+    /// <returns>True, если предмет можно добавить.</returns>
+    public bool CanAddItem(ItemData itemToAdd)
+    {
+        // Нельзя добавить, если:
+        // 1. Слот не пустой и предметы разные.
+        // 2. Слот уже полностью заполнен.
+        // 3. Предмет нельзя стакать (а слот уже занят).
+        return !IsEmpty && ItemData == itemToAdd && !IsFull;
+    }
+
     public void SetItem(ItemData item, int quantity)
     {
+        if (item == null || quantity <= 0)
+        {
+            Clear();
+            return;
+        }
         ItemData = item;
         Quantity = quantity;
     }
@@ -24,7 +44,6 @@ public class InventorySlot
         ItemData = null;
         Quantity = 0;
     }
-
 
     public void AddQuantity(int amount)
     {

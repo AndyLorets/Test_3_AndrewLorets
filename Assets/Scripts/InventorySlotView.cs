@@ -3,22 +3,19 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System;
-using DG.Tweening; // Подключаем DOTween для плавных переходов
+using DG.Tweening;
 
 public class InventorySlotView : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler,
                                 IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
 {
-    // --- СТАРЫЕ ПОЛЯ ---
     [SerializeField] private Image _background;
     [SerializeField] private Image _itemIcon;
     [SerializeField] private TextMeshProUGUI _quantityText;
 
-    // --- НОВАЯ СТРУКТУРА ДЛЯ ВИЗУАЛЬНЫХ НАСТРОЕК ---
     [Serializable]
     public struct SlotStateVisuals
     {
         public Color BackgroundColor;
-        // Сюда можно добавить и другие параметры, например, цвет рамки, спрайт и т.д.
     }
 
     [Header("Настройки состояний")]
@@ -30,65 +27,53 @@ public class InventorySlotView : MonoBehaviour, IPointerEnterHandler, IPointerEx
 
     public int SlotIndex { get; private set; }
 
-    // --- СТАРЫЕ СОБЫТИЯ ---
     public event Action<int> OnPointerEnterEvent;
     public event Action OnPointerExitEvent;
     public event Action<int> OnBeginDragEvent;
     public event Action OnEndDragEvent;
     public event Action<int> OnDoubleClickEvent;
 
-    // --- НОВЫЕ ПОЛЯ ДЛЯ УПРАВЛЕНИЯ СОСТОЯНИЕМ ---
+    // --- УПРАВЛЕНИЕ СОСТОЯНИЕМ ---
     private bool _isPointerOver;
     private bool _isSelected;
-    private bool _isEmpty = true; // Начинаем с предположения, что слот пуст
+    private bool _isEmpty = true;
+    private bool _isGlobalDragging; // НОВОЕ ПОЛЕ: знает, тащит ли кто-то предмет ВООБЩЕ
 
     public void Init(int index)
     {
         SlotIndex = index;
+        // При инициализации сразу устанавливаем правильный пустой цвет
+        _background.color = _emptyState.BackgroundColor;
     }
 
     public void UpdateView(InventorySlot slot)
     {
         _isEmpty = slot.IsEmpty;
+        _itemIcon.gameObject.SetActive(!_isEmpty);
+        _quantityText.gameObject.SetActive(!_isEmpty && slot.ItemData.CanStack && slot.Quantity > 1);
 
-        if (_isEmpty)
+        if (!_isEmpty)
         {
-            _itemIcon.gameObject.SetActive(false);
-            _quantityText.gameObject.SetActive(false);
-        }
-        else
-        {
-            _itemIcon.gameObject.SetActive(true);
             _itemIcon.sprite = slot.ItemData.Icon;
-
-            bool textActive = slot.ItemData.CanStack && slot.Quantity > 1;
-            _quantityText.gameObject.SetActive(textActive);
-            if (textActive)
+            if (_quantityText.gameObject.activeSelf)
             {
                 _quantityText.text = slot.Quantity.ToString();
             }
         }
-
-        // После обновления данных, обновляем и визуальное состояние
         UpdateVisualState();
     }
+
     private void UpdateVisualState()
     {
         SlotStateVisuals targetState;
 
-        // Определяем, можно ли сейчас подсвечивать этот слот при наведении
-        // Можно, если:
-        // 1. Слот НЕ пустой (обычное наведение).
-        // ИЛИ
-        // 2. Идет перетаскивание (можно навести на любой слот, чтобы бросить предмет).
-        bool canBeHovered = !_isEmpty || InventoryController.IsDragging;
+        bool canBeHovered = !_isEmpty || _isGlobalDragging;
 
-        // Логика приоритетов: Selected > Hovered > Empty/Normal
         if (_isSelected)
         {
             targetState = _selectedState;
         }
-        else if (_isPointerOver && canBeHovered) 
+        else if (_isPointerOver && canBeHovered)
         {
             targetState = _hoveredState;
         }
@@ -97,8 +82,10 @@ public class InventorySlotView : MonoBehaviour, IPointerEnterHandler, IPointerEx
             targetState = _isEmpty ? _emptyState : _normalState;
         }
 
-        _background.DOColor(targetState.BackgroundColor, _colorFadeDuration);
+        _background.DOColor(targetState.BackgroundColor, _colorFadeDuration).SetEase(Ease.OutQuad);
     }
+
+    // --- ПУБЛИЧНЫЕ МЕТОДЫ ДЛЯ КОНТРОЛЛЕРА ---
 
     public void SetSelected(bool isSelected)
     {
@@ -106,7 +93,19 @@ public class InventorySlotView : MonoBehaviour, IPointerEnterHandler, IPointerEx
         UpdateVisualState();
     }
 
-    #region Pointer Events (обновлены для работы с состояниями)
+    // НОВЫЙ МЕТОД: Слот получает уведомление о глобальном состоянии перетаскивания
+    public void OnGlobalDragStateChanged(bool isDragging)
+    {
+        _isGlobalDragging = isDragging;
+        // Перерисовываем себя, если мышь сейчас над нами,
+        // так как наше состояние "можно ли подсвечивать" могло измениться
+        if (_isPointerOver)
+        {
+            UpdateVisualState();
+        }
+    }
+
+    #region Pointer Events
 
     public void OnPointerEnter(PointerEventData eventData)
     {

@@ -3,38 +3,24 @@ using UnityEngine;
 
 public class InventoryInstaller : MonoInstaller
 {
-    [Header("Объекты со сцены")]
+    [Header("Компоненты со сцены")]
     [SerializeField] private Canvas _mainCanvas;
+    [SerializeField] private PlayerInventoryHolder _playerInventoryHolderInstance; 
     [SerializeField] private InventoryWindowView _inventoryWindowInstance;
 
     [Header("Префабы для создания")]
     [SerializeField] private DragIconView _dragIconViewPrefab;
     [SerializeField] private TooltipView _tooltipViewPrefab;
 
-    private const int PLAYER_INVENTORY_CAPACITY = 20;
-    private const int CONTAINER_INVENTORY_CAPACITY = 12;
-
     public override void InstallBindings()
     {
-        // --- MODEL ---
-        Container.Bind<InventoryModel>()
-                 .WithId(InventoryIDs.Player)
-                 .FromMethod(_ => new InventoryModel(PLAYER_INVENTORY_CAPACITY))
-                 .AsCached();
-
-        Container.Bind<InventoryModel>()
-                 .WithId(InventoryIDs.Container)
-                 .FromMethod(_ => new InventoryModel(CONTAINER_INVENTORY_CAPACITY))
-                 .AsCached();
-
         // --- VIEW ---
-        // --- ИЗМЕНЕНИЕ 2: Используем FromInstance() ---
-        // Биндим конкретный экземпляр InventoryWindowView, который уже есть на сцене
-        Container.Bind<InventoryWindowView>()
-                 .FromInstance(_inventoryWindowInstance)
-                 .AsSingle();
+        // Биндим компоненты, которые уже существуют на сцене.
+        // Zenject просто запомнит, где их найти.
+        Container.Bind<PlayerInventoryHolder>().FromInstance(_playerInventoryHolderInstance).AsSingle();
+        Container.Bind<InventoryWindowView>().FromInstance(_inventoryWindowInstance).AsSingle();
 
-        // Остальные View создаем из префабов, как и раньше
+        // Биндим вспомогательные View, которые нужно создать из префабов.
         Container.Bind<DragIconView>().FromComponentInNewPrefab(_dragIconViewPrefab)
             .UnderTransform(_mainCanvas.transform).AsSingle();
 
@@ -42,6 +28,13 @@ public class InventoryInstaller : MonoInstaller
             .UnderTransform(_mainCanvas.transform).AsSingle();
 
         // --- CONTROLLERS ---
-        Container.BindInterfacesAndSelfTo<InventoryController>().AsSingle().NonLazy();
+        // Биндим контроллер, отвечающий за логику drag & drop и т.д.
+        // Он больше не зависит от моделей напрямую, поэтому биндинг простой.
+        Container.Bind<InventoryController>().AsSingle();
+
+        // Биндим ГЛАВНЫЙ "дирижер", который связывает мир и UI.
+        // BindInterfacesAndSelfTo + NonLazy заставит его создаться на старте
+        // и немедленно подписаться на все нужные события (в своем методе Initialize).
+        Container.BindInterfacesAndSelfTo<InventoryUIManager>().AsSingle().NonLazy();
     }
 }
