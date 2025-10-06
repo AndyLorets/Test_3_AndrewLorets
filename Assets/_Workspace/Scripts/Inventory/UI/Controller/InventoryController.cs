@@ -57,12 +57,14 @@ public class InventoryController
         slotView.OnBeginDragEvent -= (index) => HandleBeginDrag(slotView, model);
         slotView.OnEndDragEvent -= HandleEndDrag;
         slotView.OnDoubleClickEvent -= (index) => HandleDoubleClick(model, index);
+        slotView.OnRightClickEvent -= (index) => HandleRightClick(model, index);
 
         slotView.OnPointerEnterEvent += (index) => HandlePointerEnter(model, index);
         slotView.OnPointerExitEvent += HandlePointerExit;
         slotView.OnBeginDragEvent += (index) => HandleBeginDrag(slotView, model);
         slotView.OnEndDragEvent += HandleEndDrag;
         slotView.OnDoubleClickEvent += (index) => HandleDoubleClick(model, index);
+        slotView.OnRightClickEvent += (index) => HandleRightClick(model, index);
     }
 
     #region Event Handlers (Обработчики событий от View)
@@ -143,6 +145,15 @@ public class InventoryController
         }
     }
 
+    /// <summary>
+    /// Срабатывает при правом клике на слот. Запрашивает подтверждение на удаление.
+    /// </summary>
+    private void HandleRightClick(InventoryModel model, int index)
+    {
+        if (model.Slots[index].IsEmpty) return;
+
+        model.RemoveItemQuantity(index, 1);
+    }
     #endregion
 
     #region Helpers (Вспомогательные методы)

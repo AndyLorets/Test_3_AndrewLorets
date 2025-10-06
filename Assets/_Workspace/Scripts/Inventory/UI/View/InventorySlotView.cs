@@ -26,6 +26,7 @@ public class InventorySlotView : MonoBehaviour, IPointerEnterHandler, IPointerEx
     public event Action<int> OnBeginDragEvent;
     public event Action OnEndDragEvent;
     public event Action<int> OnDoubleClickEvent;
+    public event Action<int> OnRightClickEvent;
 
     private bool _isPointerOver;
     private bool _isSelected;
@@ -133,6 +134,10 @@ public class InventorySlotView : MonoBehaviour, IPointerEnterHandler, IPointerEx
         if (eventData.button == PointerEventData.InputButton.Left && eventData.clickCount == 2 && !_isEmpty)
         {
             OnDoubleClickEvent?.Invoke(SlotIndex);
+        }
+        else if (eventData.button == PointerEventData.InputButton.Right && !_isEmpty)
+        {
+            OnRightClickEvent?.Invoke(SlotIndex);
         }
     }
 

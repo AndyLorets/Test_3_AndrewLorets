@@ -186,4 +186,44 @@ public class InventoryModel
     {
         OnInventoryUpdated?.Invoke();
     }
+
+    /// <summary>
+    /// Сортирует слоты инвентаря по заданному критерию.
+    /// </summary>
+    /// <param name="criteria">Критерий для основной сортировки.</param>
+    public void Sort(SortCriteria criteria)
+    {
+        IOrderedEnumerable<InventorySlot> sortedSlots;
+
+        switch (criteria)
+        {
+            case SortCriteria.ByType:
+                sortedSlots = Slots.OrderBy(slot => slot.IsEmpty)
+                                   .ThenBy(slot => slot.ItemData?.Type);
+                break;
+            case SortCriteria.ByName:
+                sortedSlots = Slots.OrderBy(slot => slot.IsEmpty)
+                                   .ThenBy(slot => slot.ItemData?.Name);
+                break;
+            case SortCriteria.ByQuantity:
+                sortedSlots = Slots.OrderBy(slot => slot.IsEmpty)
+                                   .ThenByDescending(slot => slot.Quantity);
+                break;
+            default:
+                sortedSlots = Slots.OrderBy(slot => slot.IsEmpty)
+                                   .ThenBy(slot => slot.ItemData?.Name);
+                break;
+        }
+
+        Slots = sortedSlots.ThenBy(slot => slot.ItemData?.Name).ToList();
+
+        OnInventoryUpdated?.Invoke();
+    }
+
+}
+public enum SortCriteria
+{
+    ByType,
+    ByName,
+    ByQuantity
 }

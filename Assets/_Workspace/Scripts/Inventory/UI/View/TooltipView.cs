@@ -4,34 +4,31 @@ using DG.Tweening;
 using System.Collections;
 
 /// <summary>
-/// [VIEW] - MonoBehaviour, управляющий всплывающей подсказкой (тултипом).
-/// Отвечает за:
-/// 1. Отображение информации о предмете.
-/// 2. Автоматический расчет своего размера в зависимости от длины текста.
-/// 3. Позиционирование себя на экране рядом с курсором, избегая выхода за границы.
-/// 4. Плавные анимации появления и исчезновения.
+/// [VIEW] - Управляет всплывающей подсказкой. Рассчитывает свой размер и позицию.
 /// </summary>
 [RequireComponent(typeof(CanvasGroup))]
 public class TooltipView : MonoBehaviour
 {
     [Header("UI Элементы")]
-    [SerializeField] private TextMeshProUGUI _titleText;
-    [SerializeField] private TextMeshProUGUI _descriptionText;
+    [Tooltip("Единственный текстовый элемент для всего содержимого")]
+    [SerializeField] private TextMeshProUGUI _tooltipText;
+    [Tooltip("RectTransform фона, чей размер мы будем менять")]
     [SerializeField] private RectTransform _backgroundRect;
 
-    [Header("Настройки компоновки")]
-    [SerializeField, Tooltip("Отступы внутри панели (X, Y)")] private Vector2 _padding = new Vector2(20, 20); 
-    [SerializeField, Tooltip("Расстояние между заголовком и описанием")] private float _spacing = 10f;                 
-    [SerializeField, Tooltip("Максимальная ширина панели")] private float _maxWidth = 300f;               
-    [SerializeField, Tooltip("Смещение от курсора")] private Vector2 _offset = new Vector2(15, -15); 
+    [Header("Настройки")]
+    [Tooltip("Внутренние отступы от края фона до текста")]
+    [SerializeField] private Vector2 _padding = new Vector2(20, 20);
+    [Tooltip("Смещение от курсора мыши")]
+    [SerializeField] private Vector2 _offset = new Vector2(15, -15);
+    [Tooltip("Максимальная ширина тултипа. Текст будет переноситься, если превысит ее.")]
+    [SerializeField] private float _maxWidth = 300f;
+    [Tooltip("Длительность анимации появления/исчезновения")]
+    [SerializeField] private float _fadeDuration = 0.15f;
 
     private CanvasGroup _canvasGroup;
     private Coroutine _activeCoroutine;
-    private ItemData _currentItem;
+    private ItemData _currentItem; // Для оптимизации
 
-    /// <summary>
-    /// Инициализация компонента.
-    /// </summary>
     private void Awake()
     {
         _canvasGroup = GetComponent<CanvasGroup>();
@@ -40,10 +37,12 @@ public class TooltipView : MonoBehaviour
     }
 
     /// <summary>
-    /// Публичный метод для показа/обновления тултипа с данными о предмете.
+    /// Показывает тултип с информацией из ItemData.
     /// </summary>
     public void Show(ItemData itemData)
     {
+        if (itemData == null) return;
+
         if (_currentItem == itemData && gameObject.activeSelf) return;
         _currentItem = itemData;
 
@@ -53,45 +52,34 @@ public class TooltipView : MonoBehaviour
         _activeCoroutine = StartCoroutine(ShowRoutine(itemData));
     }
 
-    /// <summary>
-    /// Корутина, отвечающая за сложный процесс отображения:
-    /// плавно скрывает старый текст, обновляет контент, пересчитывает размер, позиционирует и плавно показывает.
-    /// </summary>
     private IEnumerator ShowRoutine(ItemData itemData)
     {
         if (_canvasGroup.alpha > 0)
         {
-            yield return _canvasGroup.DOFade(0f, 0.15f).WaitForCompletion();
+            yield return _canvasGroup.DOFade(0f, _fadeDuration).WaitForCompletion();
         }
 
-        _titleText.text = $"<color=green>{itemData.Name}</color>";
-        _descriptionText.text = itemData.Description;
+        string content = $"<b><color=#00FF00>{itemData.Name}</color></b>\n\n{itemData.Description}";
+        _tooltipText.text = content;
 
         float textWidth = _maxWidth - _padding.x * 2;
-        _titleText.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, textWidth);
-        _descriptionText.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, textWidth);
+        Vector2 preferredSize = _tooltipText.GetPreferredValues(textWidth, float.PositiveInfinity);
 
-        _titleText.ForceMeshUpdate();
-        _descriptionText.ForceMeshUpdate();
-
-        Vector2 titleSize = _titleText.GetPreferredValues(textWidth, float.PositiveInfinity);
-        Vector2 descriptionSize = _descriptionText.GetPreferredValues(textWidth, float.PositiveInfinity);
-
-        float finalHeight = titleSize.y + descriptionSize.y + _spacing + _padding.y * 2;
-        _backgroundRect.sizeDelta = new Vector2(_maxWidth, finalHeight);
-
-        _titleText.rectTransform.anchoredPosition = new Vector2(_padding.x, -_padding.y);
-        _descriptionText.rectTransform.anchoredPosition = new Vector2(_padding.x, -_padding.y - titleSize.y - _spacing);
+        _backgroundRect.sizeDelta = new Vector2(_maxWidth, preferredSize.y + _padding.y * 2);
 
         yield return null;
 
         Reposition();
-        yield return _canvasGroup.DOFade(1f, 0.15f).WaitForCompletion();
+
+        _canvasGroup.DOFade(1f, _fadeDuration);
+        transform.localScale = Vector3.one * 0.95f;
+        transform.DOScale(1f, _fadeDuration * 2).SetEase(Ease.OutBack);
+
         _activeCoroutine = null;
     }
 
     /// <summary>
-    /// Публичный метод для скрытия тултипа.
+    /// Плавно скрывает тултип.
     /// </summary>
     public void Hide()
     {
@@ -102,31 +90,32 @@ public class TooltipView : MonoBehaviour
         _activeCoroutine = StartCoroutine(HideRoutine());
     }
 
-    /// <summary>
-    /// Корутина, плавно скрывающая тултип и деактивирующая GameObject.
-    /// </summary>
     private IEnumerator HideRoutine()
     {
-        yield return _canvasGroup.DOFade(0f, 0.15f).WaitForCompletion();
+        transform.DOKill();
+        _canvasGroup.DOKill();
+        yield return _canvasGroup.DOFade(0f, _fadeDuration).WaitForCompletion();
         gameObject.SetActive(false);
         _activeCoroutine = null;
     }
 
     /// <summary>
-    /// Вычисляет позицию тултипа рядом с курсором, не давая ему выйти за пределы экрана.
+    /// Позиционирует тултип рядом с курсором, не давая ему выйти за пределы экрана.
     /// </summary>
     private void Reposition()
     {
+        _backgroundRect.pivot = new Vector2(0, 1);
+
         Vector2 finalPosition = (Vector2)Input.mousePosition + _offset;
 
         float width = _backgroundRect.rect.width;
         float height = _backgroundRect.rect.height;
 
-        if (finalPosition.x + width > Screen.width) finalPosition.x = Screen.width - width;
-        if (finalPosition.x < 0) finalPosition.x = 0;
+        if (finalPosition.x + width > Screen.width)
+            finalPosition.x = Input.mousePosition.x - width - _offset.x;
 
-        if (finalPosition.y - height < 0) finalPosition.y = height;
-        if (finalPosition.y > Screen.height) finalPosition.y = Screen.height;
+        if (finalPosition.y - height < 0)
+            finalPosition.y = Input.mousePosition.y + height - _offset.y;
 
         _backgroundRect.position = finalPosition;
     }

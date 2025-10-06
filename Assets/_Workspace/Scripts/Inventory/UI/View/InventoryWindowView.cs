@@ -2,6 +2,15 @@ using UnityEngine;
 using DG.Tweening;
 using TMPro;
 using UnityEngine.UI;
+using System;
+
+
+public enum InventoryPanelType
+{
+    Player,
+    Container
+}
+
 
 /// <summary>
 /// [VIEW] - Главный MonoBehaviour для всего окна инвентаря.
@@ -22,6 +31,16 @@ public class InventoryWindowView : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _playerInventoryTitle;
     [SerializeField] private TextMeshProUGUI _containerInventoryTitle;
     [SerializeField] private Button _closeBtn;
+
+    [Header("Кнопки сортировки")]
+    [SerializeField] private Button _playerSortTypeBtn;
+    [SerializeField] private Button _playerSortNameBtn;
+    [SerializeField] private Button _playerSortQuantityBtn;
+    [Space(5)]
+    [SerializeField] private Button _containerSortTypeBtn;
+    [SerializeField] private Button _containerSortNameBtn;
+    [SerializeField] private Button _containerSortQuantityBtn;
+
     public InventoryView PlayerInventoryView { get; private set; }
     public InventoryView ContainerInventoryView { get; private set; }
 
@@ -34,17 +53,32 @@ public class InventoryWindowView : MonoBehaviour
     public bool IsOpen { get; private set; }
 
     /// <summary>
-    /// Первоначальная настройка при запуске.
+    /// Событие, которое вызывается при нажатии на кнопку сортировки.
     /// </summary>
+    public event Action<InventoryPanelType, SortCriteria> OnSortButtonClicked;
+    public event System.Action OnCloseButtonClicked;
+
     private void Awake()
     {
         _canvasGroup = GetComponent<CanvasGroup>();
 
         ClearPanels();
+        InitButtons();
         gameObject.SetActive(false);
+    }
+
+    private void InitButtons()
+    {
+        _playerSortTypeBtn.onClick.AddListener(() => OnSortButtonClicked?.Invoke(InventoryPanelType.Player, SortCriteria.ByType));
+        _playerSortNameBtn.onClick.AddListener(() => OnSortButtonClicked?.Invoke(InventoryPanelType.Player, SortCriteria.ByName));
+        _playerSortQuantityBtn.onClick.AddListener(() => OnSortButtonClicked?.Invoke(InventoryPanelType.Player, SortCriteria.ByQuantity));
+
+        _containerSortTypeBtn.onClick.AddListener(() => OnSortButtonClicked?.Invoke(InventoryPanelType.Container, SortCriteria.ByType));
+        _containerSortNameBtn.onClick.AddListener(() => OnSortButtonClicked?.Invoke(InventoryPanelType.Container, SortCriteria.ByName));
+        _containerSortQuantityBtn.onClick.AddListener(() => OnSortButtonClicked?.Invoke(InventoryPanelType.Container, SortCriteria.ByQuantity));
 
         _closeBtn.onClick.RemoveAllListeners();
-        _closeBtn.onClick.AddListener(Hide);
+        _closeBtn.onClick.AddListener(() => OnCloseButtonClicked?.Invoke());
     }
 
     /// <summary>
@@ -57,7 +91,7 @@ public class InventoryWindowView : MonoBehaviour
         if (IsOpen) return; 
 
         IsOpen = true;
-        GameState.IsUiOpen = true;
+
         gameObject.SetActive(true);
         _activeFadeTween?.Kill();
 
@@ -70,6 +104,7 @@ public class InventoryWindowView : MonoBehaviour
         bool hasContainer = container != null;
         _containerSlotsContainer.gameObject.SetActive(hasContainer);
         _containerInventoryTitle.gameObject.SetActive(hasContainer);
+        _containerSortTypeBtn.transform.parent.gameObject.SetActive(hasContainer);
 
         if (hasContainer)
         {
@@ -91,7 +126,6 @@ public class InventoryWindowView : MonoBehaviour
     {
         if (!IsOpen) return;
 
-        GameState.IsUiOpen = false;
         IsOpen = false;
 
         _activeFadeTween?.Kill();
