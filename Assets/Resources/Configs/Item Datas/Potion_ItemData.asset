@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ed7c46f3068e7446a30a3a606e9a0b4, type: 3}
+  m_Name: Potion_ItemData
+  m_EditorClassIdentifier: 
+  Name: Healing Potion
+  Description: "A simple yet precious remedy that restores a portion of your health.
+    Brewed from wild herbs, it smells like wet earth after rain. Some call it pure
+    alchemy, others\u2014magic and a bit of faith in life. Either way, drink it before
+    it\u2019s too late."
+  Type: 1
+  Icon: {fileID: 21300000, guid: 2fee13afa7723a64aae26590016cb3bc, type: 3}
+  CanStack: 1
+  MaxStackSize: 5
+  SpecificAmount: 50
